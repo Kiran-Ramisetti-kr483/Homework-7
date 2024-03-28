@@ -1,12 +1,12 @@
 import sys
 import qrcode
 from dotenv import load_dotenv
-import logging.config
+import logging
 from pathlib import Path
 import os
 import argparse
 from datetime import datetime
-import validators  # Import the validators package
+import validators
 
 # Load environment variables
 load_dotenv()
@@ -25,12 +25,12 @@ def setup_logging():
         ]
     )
 
-def create_directory(path: Path):
+def create_directory(path):
     try:
-        path.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
+        os.makedirs(path, exist_ok=True)
+    except OSError as e:
         logging.error(f"Failed to create directory {path}: {e}")
-        exit(1)
+        sys.exit(1)
 
 def is_valid_url(url):
     if validators.url(url):
@@ -39,9 +39,9 @@ def is_valid_url(url):
         logging.error(f"Invalid URL provided: {url}")
         return False
 
-def generate_qr_code(data, path, fill_color='red', back_color='white'):
+def generate_qr_code(data, path, fill_color='black', back_color='white'):
     if not is_valid_url(data):
-        return  # Exit the function if the URL is not valid
+        return
 
     try:
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
@@ -49,7 +49,7 @@ def generate_qr_code(data, path, fill_color='red', back_color='white'):
         qr.make(fit=True)
         img = qr.make_image(fill_color=fill_color, back_color=back_color)
 
-        with path.open('wb') as qr_file:
+        with open(path, 'wb') as qr_file:
             img.save(qr_file)
         logging.info(f"QR code successfully saved to {path}")
 
@@ -70,10 +70,10 @@ def main():
     qr_filename = f"QRCode_{timestamp}.png"
 
     # Create the full path for the QR code file
-    qr_code_full_path = Path.cwd() / QR_DIRECTORY / qr_filename
+    qr_code_full_path = os.path.join(os.getcwd(), QR_DIRECTORY, qr_filename)
     
     # Ensure the QR code directory exists
-    create_directory(Path.cwd() / QR_DIRECTORY)
+    create_directory(os.path.join(os.getcwd(), QR_DIRECTORY))
     
     # Generate and save the QR code
     generate_qr_code(args.url, qr_code_full_path, FILL_COLOR, BACK_COLOR)
